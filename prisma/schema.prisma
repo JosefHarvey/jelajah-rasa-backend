@@ -1,0 +1,92 @@
+// Blok ini memberitahu Prisma bahwa kita menggunakan database PostgreSQL
+// dan alamatnya ada di file .env
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Blok ini akan membuat "kurir" khusus untuk kita nanti
+generator client {
+  provider = "prisma-client-js"
+}
+
+// --- MODEL DATABASE LENGKAP SESUAI REVISI ---
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+
+  // Relasi: Satu User bisa punya banyak Comment dan Rating
+  comments  Comment[]
+  ratings   Rating[]
+}
+
+model Region {
+  id                      Int      @id @default(autoincrement())
+  name                    String   @unique
+  description             String
+  cuisine_characteristics String
+
+  // Relasi: Satu Region bisa punya banyak Food
+  foods                   Food[]
+}
+
+model Food {
+  id                Int      @id @default(autoincrement())
+  name              String
+  history           String
+  ingredients       String
+  influencerComment String?  // Komentar dari influencer (opsional)
+  commentSource     String?  // Sumber komentar (misal: URL YouTube, opsional)
+
+  // Relasi ke Region
+  regionId Int
+  region   Region @relation(fields: [regionId], references: [id])
+
+  // Relasi: Satu Food bisa punya banyak Comment dan Rating
+  comments Comment[]
+  ratings  Rating[]
+}
+
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+
+  // Relasi ke User
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  // Relasi ke Food
+  foodId Int
+  food   Food @relation(fields: [foodId], references: [id])
+}
+
+model Rating {
+  id    Int @id @default(autoincrement())
+  value Int // Nilai rating, misal 1-5
+
+  // Relasi ke User
+  userId Int
+  user   User @relation(fields: [userId], references: [id])
+
+  // Relasi ke Food
+  foodId Int
+  food   Food @relation(fields: [foodId], references: [id])
+
+  // Aturan agar 1 user hanya bisa memberi 1 rating untuk 1 makanan
+  @@unique([userId, foodId])
+}
+
+model Suggestion {
+  id            Int      @id @default(autoincrement())
+  foodName      String
+  origin        String   // Daerah asal
+  description   String
+  suggesterName String?  // Nama pengirim (opsional)
+  status        String   @default("PENDING") // Status: PENDING, APPROVED, REJECTED
+  createdAt     DateTime @default(now())
+}
