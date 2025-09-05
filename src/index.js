@@ -1,28 +1,35 @@
 const express = require('express');
-// 1. Import rute autentikasi yang baru kita buat
+const cors = require('cors');
+
+// Impor semua file rute Anda
 const authRoutes = require('./routes/auth.routes.js');
 const userRoutes = require('./routes/user.routes.js');
+const regionRoutes = require('./routes/region.routes.js'); // <-- AKTIFKAN KEMBALI
 const foodRoutes = require('./routes/food.routes.js');
 const suggestionRoutes = require('./routes/suggestion.routes.js');
-
-
+const restaurantRoutes = require('./routes/restaurant.routes.js'); // <-- AKTIFKAN KEMBALI
 
 const app = express();
 const port = 3000;
 
-// 2. Middleware PENTING agar Express bisa membaca body JSON dari request
+// Middleware
+app.use(cors());
 app.use(express.json());
 
+// Rute dasar
 app.get('/', (req, res) => {
     res.send('API Jelajah Rasa Siap Digunakan!');
 });
 
-// 3. Gunakan rute autentikasi dengan awalan /api/auth
+// Gunakan semua rute yang sudah diimpor
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/regions', regionRoutes); // <-- AKTIFKAN KEMBALI
 app.use('/api/foods', foodRoutes);
 app.use('/api/suggestions', suggestionRoutes);
+app.use('/api/restaurants', restaurantRoutes); // <-- AKTIFKAN KEMBALI
 
+// Jalankan server
 app.listen(port, () => {
   console.log(`Server berjalan di http://localhost:${port}`);
 });

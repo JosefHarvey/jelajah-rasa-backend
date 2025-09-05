@@ -10,11 +10,12 @@ generator client {
   provider = "prisma-client-js"
 }
 
-// --- MODEL DATABASE LENGKAP SESUAI REVISI ---
+// --- MODEL DATABASE FINAL ---
 
 model User {
   id        Int      @id @default(autoincrement())
-  name      String
+  firstName String
+  lastName  String
   email     String   @unique
   password  String
   createdAt DateTime @default(now())
@@ -30,25 +31,57 @@ model Region {
   description             String
   cuisine_characteristics String
 
-  // Relasi: Satu Region bisa punya banyak Food
+  // Relasi: Satu Region bisa punya banyak Food dan Restaurant
   foods                   Food[]
+  restaurants             Restaurant[]
 }
 
 model Food {
   id                Int      @id @default(autoincrement())
   name              String
-  history           String
-  ingredients       String
-  influencerComment String?  // Komentar dari influencer (opsional)
-  commentSource     String?  // Sumber komentar (misal: URL YouTube, opsional)
+  historyAndMeaning String?
+  cookingMethod     String?
+  quickFacts        String?
+  latitude          Float?
+  longitude         Float?
+  influencerComment String?
+  commentSource     String?
 
   // Relasi ke Region
   regionId Int
-  region   Region @relation(fields: [regionId], references: [id])
+  region   Region @relation(fields: [regionId], references: [id], onDelete: Cascade)
 
   // Relasi: Satu Food bisa punya banyak Comment dan Rating
   comments Comment[]
   ratings  Rating[]
+
+  // Relasi Many-to-Many dengan Restaurant
+  restaurants FoodOnRestaurant[]
+}
+
+// Model baru untuk tempat makan
+model Restaurant {
+  id             Int      @id @default(autoincrement())
+  name           String
+  address        String
+  googleMapsLink String?
+
+  // Relasi ke Region
+  regionId Int
+  region   Region @relation(fields: [regionId], references: [id], onDelete: Cascade)
+
+  // Relasi Many-to-Many dengan Food
+  foods FoodOnRestaurant[]
+}
+
+// Model penghubung untuk Food dan Restaurant (Many-to-Many)
+model FoodOnRestaurant {
+  foodId       Int
+  food         Food     @relation(fields: [foodId], references: [id], onDelete: Cascade)
+  restaurantId Int
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+
+  @@id([foodId, restaurantId])
 }
 
 model Comment {
@@ -58,24 +91,24 @@ model Comment {
 
   // Relasi ke User
   userId Int
-  user   User @relation(fields: [userId], references: [id])
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Relasi ke Food
   foodId Int
-  food   Food @relation(fields: [foodId], references: [id])
+  food   Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
 }
 
 model Rating {
   id    Int @id @default(autoincrement())
-  value Int // Nilai rating, misal 1-5
+  value Int
 
   // Relasi ke User
   userId Int
-  user   User @relation(fields: [userId], references: [id])
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Relasi ke Food
   foodId Int
-  food   Food @relation(fields: [foodId], references: [id])
+  food   Food @relation(fields: [foodId], references: [id], onDelete: Cascade)
 
   // Aturan agar 1 user hanya bisa memberi 1 rating untuk 1 makanan
   @@unique([userId, foodId])
@@ -84,9 +117,9 @@ model Rating {
 model Suggestion {
   id            Int      @id @default(autoincrement())
   foodName      String
-  origin        String   // Daerah asal
+  origin        String
   description   String
-  suggesterName String?  // Nama pengirim (opsional)
-  status        String   @default("PENDING") // Status: PENDING, APPROVED, REJECTED
+  suggesterName String?
+  status        String   @default("PENDING")
   createdAt     DateTime @default(now())
 }

@@ -1,10 +1,10 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Fungsi untuk menambah komentar baru (kode Anda yang sudah ada)
+// Fungsi untuk menambah komentar baru (Tidak ada perubahan)
 const addComment = async (req, res) => {
     const foodId = parseInt(req.params.foodId);
-    const userId = req.user.userId; // Diambil dari token oleh middleware
+    const userId = req.user.userId;
     const { content } = req.body;
 
     try {
@@ -17,16 +17,38 @@ const addComment = async (req, res) => {
     }
 };
 
-// Fungsi untuk menambah/mengupdate rating (kode Anda yang sudah ada)
+// Fungsi untuk mencari makanan (Tidak ada perubahan)
+const searchFoods = async (req, res) => {
+    const { q } = req.query;
+
+    if (!q) {
+        return res.status(400).json({ message: "Query pencarian tidak boleh kosong." });
+    }
+
+    try {
+        const foods = await prisma.food.findMany({
+            where: {
+                name: {
+                    contains: q,
+                    mode: 'insensitive',
+                },
+            },
+        });
+        res.status(200).json(foods);
+    } catch (error) {
+        res.status(500).json({ message: "Gagal melakukan pencarian", error: error.message });
+    }
+};
+
+// Fungsi untuk menambah/mengupdate rating (Tidak ada perubahan)
 const addRating = async (req, res) => {
     const foodId = parseInt(req.params.foodId);
     const userId = req.user.userId;
-    const { value } = req.body; // value harus angka 1-5
+    const { value } = req.body;
 
     try {
-        // Prisma's upsert: jika sudah ada, update. Jika belum, buat baru.
         const newRating = await prisma.rating.upsert({
-            where: { userId_foodId: { userId, foodId } }, // Cari berdasarkan kombinasi unik
+            where: { userId_foodId: { userId, foodId } },
             update: { value },
             create: { value, userId, foodId },
         });
@@ -36,53 +58,54 @@ const addRating = async (req, res) => {
     }
 };
 
-// --- FUNGSI BARU UNTUK MENGAMBIL DETAIL MAKANAN ---
+// Fungsi untuk mengambil detail makanan (Versi FINAL dengan Penyesuaian)
 const getFoodById = async (req, res) => {
     try {
-        // Ambil ID dari URL, contoh: /api/foods/1 -> id = "1"
         const { id } = req.params;
 
-        // Cari satu data makanan berdasarkan ID
         const food = await prisma.food.findUnique({
             where: { 
-                id: parseInt(id) // Ubah ID dari string menjadi angka
+                id: parseInt(id)
             },
-            // Sertakan data dari tabel lain yang berhubungan
             include: {
-                region: true, // Ambil data dari tabel Region
+                region: true,
                 comments: {     
-                    orderBy: { createdAt: 'desc' }, // Urutkan komentar dari yang terbaru
+                    orderBy: { createdAt: 'desc' },
                     include: {
-                        user: { // Di setiap komentar, sertakan juga data user pembuatnya
+                        user: {
+                            // --- BAGIAN YANG DISESUAIKAN ---
+                            // Mengambil firstName dan lastName, bukan lagi name
                             select: { 
-                                name: true // Tapi HANYA ambil nama user-nya saja
+                                firstName: true,
+                                lastName: true
                             }
                         }
                     }
                 },
-                ratings: true, // Ambil semua data rating
+                ratings: true,
+                restaurants: {
+                    include: {
+                        restaurant: true
+                    }
+                }
             }
         });
 
-        // Jika makanan tidak ditemukan, kirim pesan error 404
         if (!food) { 
             return res.status(404).json({ message: "Makanan tidak ditemukan" }); 
         }
 
-        // Hitung rata-rata rating
         let averageRating = 0;
         if (food.ratings.length > 0) {
             const totalRating = food.ratings.reduce((acc, rating) => acc + rating.value, 0);
             averageRating = totalRating / food.ratings.length;
         }
 
-        // Siapkan data final untuk dikirim sebagai respon
         const responseData = { 
             ...food, 
-            averageRating: parseFloat(averageRating.toFixed(1)) // Bulatkan jadi 1 angka di belakang koma
+            averageRating: parseFloat(averageRating.toFixed(1))
         };
 
-        // Kirim semua data gabungan sebagai respon sukses
         res.status(200).json(responseData);
 
     } catch (error) {
@@ -91,9 +114,9 @@ const getFoodById = async (req, res) => {
 };
 
 
-// --- PERBARUI BAGIAN INI ---
 module.exports = {
     addComment,
     addRating,
+    searchFoods,
     getFoodById, 
 };

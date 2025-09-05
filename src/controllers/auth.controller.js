@@ -3,38 +3,38 @@ const prisma = new PrismaClient();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-// --- FUNGSI UNTUK REGISTRASI PENGGUNA BARU ---
+// --- FUNGSI REGISTRASI YANG DIPERBARUI ---
 const register = async (req, res) => {
-    // 1. Ambil data nama, email, dan password dari body request
-    const { name, email, password } = req.body;
+    // 1. Ambil data baru: firstName, lastName, email, dan password
+    const { firstName, lastName, email, password } = req.body;
 
     try {
-        // 2. Hash (enkripsi) password sebelum disimpan untuk keamanan
+        // 2. Hash password (tetap sama)
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // 3. Buat user baru di database menggunakan Prisma
+        // 3. Buat user baru dengan kolom firstName dan lastName
         const newUser = await prisma.user.create({
             data: {
-                name: name,
+                firstName: firstName,
+                lastName: lastName,
                 email: email,
-                password: hashedPassword, // Simpan password yang sudah di-hash
+                password: hashedPassword,
             },
         });
 
-        // 4. Kirim respon sukses (201 Created)
+        // 4. Kirim respon sukses dengan data yang baru
         res.status(201).json({
             message: "User berhasil terdaftar!",
-            // Kirim kembali data user yang baru dibuat (tanpa password)
             user: {
                 id: newUser.id,
-                name: newUser.name,
+                firstName: newUser.firstName,
+                lastName: newUser.lastName,
                 email: newUser.email,
             },
         });
 
     } catch (error) {
-        // 5. Jika terjadi error (misal: email sudah terdaftar), kirim respon error
-        // Kode error P2002 dari Prisma menandakan 'unique constraint failed'
+        // 5. Penanganan error 
         if (error.code === 'P2002') {
             return res.status(409).json({ message: "Email sudah terdaftar." });
         }
@@ -46,38 +46,31 @@ const register = async (req, res) => {
     }
 };
 
-// --- Fungsi untuk Login Pengguna ---
+// --- Fungsi Login Pengguna 
 const login = async (req, res) => {
     try {
-        // Ambil email dan password dari body request
         const { email, password } = req.body;
 
-        // Cari user di database berdasarkan email
         const user = await prisma.user.findUnique({
             where: { email: email },
         });
 
-        // Jika user tidak ditemukan, kirim error
         if (!user) {
             return res.status(404).json({ message: "Email atau Password salah" });
         }
 
-        // Bandingkan password yang dikirim dengan hash di database
         const isPasswordValid = await bcrypt.compare(password, user.password);
 
-        // Jika password tidak valid, kirim error
         if (!isPasswordValid) {
             return res.status(401).json({ message: "Email atau Password salah" });
         }
 
-        // Jika password valid, buat JWT Token ("Tiket Masuk")
         const token = jwt.sign(
-            { userId: user.id },      // Data yang ingin kita simpan di dalam tiket
-            process.env.JWT_SECRET,   // Kunci rahasia dari file .env
-            { expiresIn: '24h' }      // Tiket akan kadaluarsa dalam 24 jam
+            { userId: user.id },
+            process.env.JWT_SECRET,
+            { expiresIn: '24h' }
         );
 
-        // Kirim tiket sebagai respon sukses
         res.status(200).json({
             message: "Login berhasil!",
             token: token,
@@ -91,7 +84,7 @@ const login = async (req, res) => {
     }
 };
 
-// Ekspor kedua fungsi agar bisa digunakan oleh router
+// Ekspor kedua fungsi
 module.exports = {
     register,
     login,
