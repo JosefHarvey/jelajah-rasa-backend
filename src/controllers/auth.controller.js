@@ -3,16 +3,16 @@ const prisma = new PrismaClient();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-// --- FUNGSI REGISTRASI YANG DIPERBARUI ---
+
 const register = async (req, res) => {
-    // 1. Ambil data baru: firstName, lastName, email, dan password
+
     const { firstName, lastName, email, password } = req.body;
 
     try {
-        // 2. Hash password (tetap sama)
+
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        // 3. Buat user baru dengan kolom firstName dan lastName
+
         const newUser = await prisma.user.create({
             data: {
                 firstName: firstName,
@@ -22,7 +22,7 @@ const register = async (req, res) => {
             },
         });
 
-        // 4. Kirim respon sukses dengan data yang baru
+
         res.status(201).json({
             message: "User berhasil terdaftar!",
             user: {
@@ -84,7 +84,7 @@ const login = async (req, res) => {
     }
 };
 
-// Ekspor kedua fungsi
+
 module.exports = {
     register,
     login,

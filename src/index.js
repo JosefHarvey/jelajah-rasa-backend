@@ -4,10 +4,10 @@ const cors = require('cors');
 // Impor semua file rute Anda
 const authRoutes = require('./routes/auth.routes.js');
 const userRoutes = require('./routes/user.routes.js');
-const regionRoutes = require('./routes/region.routes.js'); // <-- AKTIFKAN KEMBALI
+const regionRoutes = require('./routes/region.routes.js'); 
 const foodRoutes = require('./routes/food.routes.js');
 const suggestionRoutes = require('./routes/suggestion.routes.js');
-const restaurantRoutes = require('./routes/restaurant.routes.js'); // <-- AKTIFKAN KEMBALI
+const restaurantRoutes = require('./routes/restaurant.routes.js'); 
 
 const app = express();
 const port = 3000;
@@ -24,10 +24,10 @@ app.get('/', (req, res) => {
 // Gunakan semua rute yang sudah diimpor
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
-app.use('/api/regions', regionRoutes); // <-- AKTIFKAN KEMBALI
+app.use('/api/regions', regionRoutes); 
 app.use('/api/foods', foodRoutes);
 app.use('/api/suggestions', suggestionRoutes);
-app.use('/api/restaurants', restaurantRoutes); // <-- AKTIFKAN KEMBALI
+app.use('/api/restaurants', restaurantRoutes); 
 
 // Jalankan server
 app.listen(port, () => {

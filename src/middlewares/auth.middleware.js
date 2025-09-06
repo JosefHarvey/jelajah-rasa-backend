@@ -1,16 +1,16 @@
 const jwt = require('jsonwebtoken');
 
 const authenticateToken = (req, res, next) => {
-    // 1. Ambil token dari header Authorization
+    // Ambil token dari header Authorization
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Formatnya: "Bearer TOKEN"
+    const token = authHeader && authHeader.split(' ')[1]; 
 
-    // 2. Jika tidak ada token, tolak akses
+    // Jika tidak ada token, tolak akses
     if (token == null) {
         return res.status(401).json({ message: "Akses ditolak. Token tidak tersedia." });
     }
 
-    // 3. Verifikasi token
+    // Verifikasi token
     jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
         // Jika token tidak valid (error), tolak akses
         if (err) {
@@ -21,7 +21,6 @@ const authenticateToken = (req, res, next) => {
         // agar bisa digunakan oleh controller selanjutnya
         req.user = user;
 
-        // Lanjutkan ke proses selanjutnya (controller)
         next();
     });
 };

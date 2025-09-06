@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Fungsi untuk menambah komentar baru (Tidak ada perubahan)
+// Fungsi untuk menambah komentar baru
 const addComment = async (req, res) => {
     const foodId = parseInt(req.params.foodId);
     const userId = req.user.userId;
@@ -17,7 +17,7 @@ const addComment = async (req, res) => {
     }
 };
 
-// Fungsi untuk mencari makanan (Tidak ada perubahan)
+// Fungsi untuk mencari makanan
 const searchFoods = async (req, res) => {
     const { q } = req.query;
 
@@ -40,7 +40,7 @@ const searchFoods = async (req, res) => {
     }
 };
 
-// Fungsi untuk menambah/mengupdate rating (Tidak ada perubahan)
+// Fungsi untuk menambah/mengupdate rating
 const addRating = async (req, res) => {
     const foodId = parseInt(req.params.foodId);
     const userId = req.user.userId;
@@ -58,7 +58,7 @@ const addRating = async (req, res) => {
     }
 };
 
-// Fungsi untuk mengambil detail makanan (Versi FINAL dengan Penyesuaian)
+// Fungsi untuk mengambil detail makanan
 const getFoodById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -73,8 +73,6 @@ const getFoodById = async (req, res) => {
                     orderBy: { createdAt: 'desc' },
                     include: {
                         user: {
-                            // --- BAGIAN YANG DISESUAIKAN ---
-                            // Mengambil firstName dan lastName, bukan lagi name
                             select: { 
                                 firstName: true,
                                 lastName: true
@@ -113,10 +111,28 @@ const getFoodById = async (req, res) => {
     }
 };
 
+const getAllFoodPins = async (req, res) => {
+    try {
+        const foods = await prisma.food.findMany({
+            // Hanya pilih data yang dibutuhkan untuk pin peta
+            select: {
+                id: true,
+                name: true,
+                latitude: true,
+                longitude: true,
+            }
+        });
+        res.status(200).json(foods);
+    } catch (error) {
+        res.status(500).json({ message: "Gagal mengambil data pin peta", error: error.message });
+    }
+};
+
 
 module.exports = {
     addComment,
     addRating,
     searchFoods,
-    getFoodById, 
+    getFoodById,
+    getAllFoodPins, 
 };

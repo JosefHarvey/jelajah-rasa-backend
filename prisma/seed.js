@@ -5,8 +5,6 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Memulai proses seeding...');
 
-  // 1. Hapus semua data lama untuk memastikan database bersih
-  // Urutan penghapusan penting: hapus data "anak" sebelum "induk"
   await prisma.foodOnRestaurant.deleteMany();
   await prisma.comment.deleteMany();
   await prisma.rating.deleteMany();
@@ -18,13 +16,13 @@ async function main() {
   
   console.log('Data lama berhasil dihapus.');
 
-  // 2. Buat data Pengguna (User)
+  //Pengguna (User) dengan nama baru
   const hashedPassword1 = await bcrypt.hash('password123', 10);
   const user1 = await prisma.user.create({
     data: {
-      firstName: 'Budi',
-      lastName: 'Sanjaya',
-      email: 'budi@email.com',
+      firstName: 'Naufal',
+      lastName: 'Fakhri',
+      email: 'naufal@email.com',
       password: hashedPassword1,
     },
   });
@@ -32,15 +30,15 @@ async function main() {
   const hashedPassword2 = await bcrypt.hash('password456', 10);
   const user2 = await prisma.user.create({
     data: {
-      firstName: 'Citra',
-      lastName: 'Lestari',
-      email: 'citra@email.com',
+      firstName: 'Josef',
+      lastName: 'Harvey',
+      email: 'josef@email.com',
       password: hashedPassword2,
     },
   });
   console.log('Users berhasil dibuat.');
 
-  // 3. Buat data Daerah (Region)
+  //data Daerah (Region)
   const regionSumbar = await prisma.region.create({
     data: {
       name: 'Sumatera Barat',
@@ -58,7 +56,7 @@ async function main() {
   });
   console.log('Regions berhasil dibuat.');
 
-  // 4. Buat data Makanan (Food)
+  //data Makanan (Food)
   const rendang = await prisma.food.create({
     data: {
       name: 'Rendang',
@@ -88,7 +86,7 @@ async function main() {
   });
   console.log('Foods berhasil dibuat.');
 
-  // 5. Buat data Restoran
+  //Buat data Restoran
   const rmSederhana = await prisma.restaurant.create({
       data: {
           name: "RM Padang Sederhana",
@@ -100,7 +98,7 @@ async function main() {
       }
   });
 
-  // 6. Hubungkan Makanan dan Restoran (Many-to-Many)
+  //Hubungkan Makanan dan Restoran (Many-to-Many)
   await prisma.foodOnRestaurant.create({
       data: {
           foodId: rendang.id,
@@ -113,7 +111,7 @@ async function main() {
   await prisma.comment.create({
     data: {
       content: 'Rendangnya juara, bumbunya medok banget!',
-      user: { connect: { id: user1.id } },
+      user: { connect: { id: user1.id } }, //user Naufal
       food: { connect: { id: rendang.id } },
     },
   });
@@ -121,7 +119,7 @@ async function main() {
   await prisma.rating.create({
     data: {
       value: 5,
-      user: { connect: { id: user1.id } },
+      user: { connect: { id: user1.id } }, //user Naufal
       food: { connect: { id: rendang.id } },
     },
   });
@@ -129,7 +127,7 @@ async function main() {
   await prisma.comment.create({
     data: {
       content: 'Sate marangginya empuk, sambelnya seger!',
-      user: { connect: { id: user2.id } },
+      user: { connect: { id: user2.id } }, //user Josef
       food: { connect: { id: sateMaranggi.id } },
     },
   });
@@ -137,7 +135,7 @@ async function main() {
   await prisma.rating.create({
     data: {
       value: 4,
-      user: { connect: { id: user2.id } },
+      user: { connect: { id: user2.id } }, //user Josef
       food: { connect: { id: sateMaranggi.id } },
     },
   });
@@ -154,3 +152,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
