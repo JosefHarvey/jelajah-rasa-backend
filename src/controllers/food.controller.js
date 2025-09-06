@@ -1,7 +1,7 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Fungsi untuk mencari makanan
+// Fungsi untuk mencari makanan 
 const searchFoods = async (req, res) => {
     const { q } = req.query;
 
@@ -24,7 +24,7 @@ const searchFoods = async (req, res) => {
     }
 };
 
-// Fungsi untuk mengambil detail makanan 
+// menyertakan rating di setiap komentar
 const getFoodById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -40,17 +40,17 @@ const getFoodById = async (req, res) => {
                     include: {
                         user: {
                             select: { 
+                                id: true,
                                 firstName: true,
                                 lastName: true
                             }
                         }
                     }
                 },
-                ratings: true,
+                ratings: true, // Ambil semua rating untuk perhitungan
                 restaurants: {
                     include: {
                         restaurant: {
-                            
                             select: {
                                 name: true,
                                 region: {
@@ -69,6 +69,17 @@ const getFoodById = async (req, res) => {
             return res.status(404).json({ message: "Makanan tidak ditemukan" }); 
         }
 
+        // Gabungkan rating ke dalam setiap komentar
+        const commentsWithRatings = food.comments.map(comment => {
+            // Cari rating yang cocok dari user yang sama
+            const userRating = food.ratings.find(rating => rating.userId === comment.userId);
+            return {
+                ...comment,
+                ratingValue: userRating ? userRating.value : null // Tambahkan ratingValue
+            };
+        });
+
+        // Hitung rata-rata rating
         let averageRating = 0;
         if (food.ratings.length > 0) {
             const totalRating = food.ratings.reduce((acc, rating) => acc + rating.value, 0);
@@ -77,6 +88,7 @@ const getFoodById = async (req, res) => {
 
         const responseData = { 
             ...food, 
+            comments: commentsWithRatings,
             averageRating: parseFloat(averageRating.toFixed(1))
         };
 
@@ -87,7 +99,7 @@ const getFoodById = async (req, res) => {
     }
 };
 
-// Fungsi untuk pin peta
+// Fungsi untuk pin peta 
 const getAllFoodPins = async (req, res) => {
     try {
         const foods = await prisma.food.findMany({
@@ -104,7 +116,36 @@ const getAllFoodPins = async (req, res) => {
     }
 };
 
-// Fungsi untuk menambah review (rating + komentar)
+// --- FUNGSI UNTUK MAKANAN UNGGULAN
+const getFeaturedFoods = async (req, res) => {
+    try {
+        const allFoodIds = await prisma.food.findMany({
+            select: { id: true }
+        });
+
+        // Acak urutan ID dan ambil maksimal 3
+        const shuffledIds = allFoodIds.sort(() => 0.5 - Math.random());
+        const selectedIds = shuffledIds.slice(0, 3).map(f => f.id);
+
+        const featuredFoods = await prisma.food.findMany({
+            where: {
+                id: { in: selectedIds }
+            },
+            include: {
+                region: {
+                    select: { name: true }
+                }
+            }
+        });
+
+        res.status(200).json(featuredFoods);
+    } catch (error) {
+        res.status(500).json({ message: "Gagal mengambil makanan unggulan", error: error.message });
+    }
+};
+
+
+// Fungsi untuk menambah review (rating + komentar) 
 const addReview = async (req, res) => {
     const foodId = parseInt(req.params.foodId);
     const userId = req.user.userId;
@@ -142,6 +183,7 @@ module.exports = {
     searchFoods,
     getFoodById,
     getAllFoodPins,
+    getFeaturedFoods, 
     addReview,
 };
 
