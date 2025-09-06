@@ -5,6 +5,8 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('Memulai proses seeding...');
 
+  // 1. Hapus semua data lama untuk memastikan database bersih
+  // Urutan penghapusan penting untuk menghindari error relasi
   await prisma.foodOnRestaurant.deleteMany();
   await prisma.comment.deleteMany();
   await prisma.rating.deleteMany();
@@ -16,7 +18,7 @@ async function main() {
   
   console.log('Data lama berhasil dihapus.');
 
-  //Pengguna (User) dengan nama baru
+  // 2. Buat data Pengguna (User)
   const hashedPassword1 = await bcrypt.hash('password123', 10);
   const user1 = await prisma.user.create({
     data: {
@@ -38,7 +40,7 @@ async function main() {
   });
   console.log('Users berhasil dibuat.');
 
-  //data Daerah (Region)
+  // 3. Buat data Daerah (Region)
   const regionSumbar = await prisma.region.create({
     data: {
       name: 'Sumatera Barat',
@@ -56,15 +58,17 @@ async function main() {
   });
   console.log('Regions berhasil dibuat.');
 
-  //data Makanan (Food)
+  // 4. Buat data Makanan (Food)
   const rendang = await prisma.food.create({
     data: {
       name: 'Rendang',
-      historyAndMeaning: 'Berasal dari Minangkabau, rendang melambangkan musyawarah mufakat dan menjadi bekal ideal bagi perantau karena awet.',
-      cookingMethod: 'Dimasak dengan suhu rendah dalam waktu lama (slow cooking) dengan santan dan aneka rempah hingga mengering.',
-      quickFacts: 'Pernah dinobatkan sebagai hidangan terlezat di dunia versi CNN pada 2011.',
+      historyAndMeaning: 'Asal-usul rendang ditelusuri berasal dari tanah Minangkabau, Sumatera Barat. Bagi masyarakat Minang, rendang sudah ada sejak dahulu dan telah menjadi masakan tradisi yang dihidangkan dalam berbagai acara adat dan hidangan keseharian.  Sebagai masakan tradisi, rendang diduga telah lahir sejak orang Minang menggelar acara adat pertamanya. Kemudian seni memasak ini berkembang ke kawasan serantau berbudaya Melayu lainnya; mulai dari Mandailing, Riau, Jambi, hingga ke negeri seberang di Negeri Sembilan yang banyak dihuni perantau asal Minangkabau. Karena itulah rendang dikenal luas baik di Sumatera dan Semenanjung Malaya.',
+      cookingMethod: 'Proses memasak rendang asli dapat menghabiskan waktu berjam-jam (biasanya sekitar empat jam), karena itulah memasak rendang memerlukan waktu dan kesabaran. Potongan daging dimasak bersama bumbu dan santan dalam panas api yang tepat, diaduk pelan-pelan hingga santan dan bumbu terserap daging. Setelah mendidih, apinya dikecilkan dan terus diaduk hingga santan mengental dan menjadi kering. ',
+      quickFacts: 'Pernah dinobatkan sebagai hidangan terlezat di dunia versi CNN pada 2011 dan merupakan salah satu hidangan nasional Indonesia.',
       latitude: -0.94924,
       longitude: 100.35427,
+      influencerComment: 'Salah satu hidangan daging paling menakjubkan di dunia. Bumbunya meresap sempurna, sangat kaya akan rempah.',
+      commentSource: 'Mark Wiens - YouTube',
       region: {
         connect: { id: regionSumbar.id },
       },
@@ -74,9 +78,9 @@ async function main() {
   const sateMaranggi = await prisma.food.create({
     data: {
       name: 'Sate Maranggi',
-      historyAndMeaning: 'Sate khas Purwakarta yang proses perendamannya dalam bumbu kaya rempah membuatnya unik.',
-      cookingMethod: 'Daging sapi direndam (dimarinasi) dalam bumbu sebelum dibakar. Disajikan dengan sambal tomat atau oncom.',
-      quickFacts: 'Berbeda dari sate lain, biasanya tidak disajikan dengan saus kacang.',
+      historyAndMeaning: 'Sate khas dari Purwakarta, Jawa Barat. Keunikannya terletak pada proses marinasi daging dalam bumbu kaya rempah sebelum dibakar, sehingga bumbunya meresap hingga ke dalam.',
+      cookingMethod: 'Daging sapi dipotong dadu, direndam (dimarinasi) dalam bumbu manis-gurih, lalu dibakar di atas bara api. Disajikan dengan sambal tomat segar atau sambal oncom.',
+      quickFacts: 'Berbeda dari sate lain, biasanya tidak disajikan dengan saus kacang karena rasanya sudah kuat dari proses marinasi.',
       latitude: -6.5518,
       longitude: 107.444,
       region: {
@@ -86,7 +90,7 @@ async function main() {
   });
   console.log('Foods berhasil dibuat.');
 
-  //Buat data Restoran
+  // 5. Buat data Restoran
   const rmSederhana = await prisma.restaurant.create({
       data: {
           name: "RM Padang Sederhana",
@@ -98,7 +102,7 @@ async function main() {
       }
   });
 
-  //Hubungkan Makanan dan Restoran (Many-to-Many)
+  // 6. Hubungkan Makanan dan Restoran
   await prisma.foodOnRestaurant.create({
       data: {
           foodId: rendang.id,
@@ -111,7 +115,7 @@ async function main() {
   await prisma.comment.create({
     data: {
       content: 'Rendangnya juara, bumbunya medok banget!',
-      user: { connect: { id: user1.id } }, //user Naufal
+      user: { connect: { id: user1.id } }, // Naufal
       food: { connect: { id: rendang.id } },
     },
   });
@@ -119,7 +123,7 @@ async function main() {
   await prisma.rating.create({
     data: {
       value: 5,
-      user: { connect: { id: user1.id } }, //user Naufal
+      user: { connect: { id: user1.id } }, // Naufal
       food: { connect: { id: rendang.id } },
     },
   });
@@ -127,7 +131,7 @@ async function main() {
   await prisma.comment.create({
     data: {
       content: 'Sate marangginya empuk, sambelnya seger!',
-      user: { connect: { id: user2.id } }, //user Josef
+      user: { connect: { id: user2.id } }, // Josef
       food: { connect: { id: sateMaranggi.id } },
     },
   });
@@ -135,7 +139,7 @@ async function main() {
   await prisma.rating.create({
     data: {
       value: 4,
-      user: { connect: { id: user2.id } }, //user Josef
+      user: { connect: { id: user2.id } }, // Josef
       food: { connect: { id: sateMaranggi.id } },
     },
   });

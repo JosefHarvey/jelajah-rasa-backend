@@ -1,22 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Fungsi untuk menambah komentar baru
-const addComment = async (req, res) => {
-    const foodId = parseInt(req.params.foodId);
-    const userId = req.user.userId;
-    const { content } = req.body;
-
-    try {
-        const newComment = await prisma.comment.create({
-            data: { content, userId, foodId },
-        });
-        res.status(201).json(newComment);
-    } catch (error) {
-        res.status(500).json({ message: "Gagal menambah komentar", error: error.message });
-    }
-};
-
 // Fungsi untuk mencari makanan
 const searchFoods = async (req, res) => {
     const { q } = req.query;
@@ -40,25 +24,7 @@ const searchFoods = async (req, res) => {
     }
 };
 
-// Fungsi untuk menambah/mengupdate rating
-const addRating = async (req, res) => {
-    const foodId = parseInt(req.params.foodId);
-    const userId = req.user.userId;
-    const { value } = req.body;
-
-    try {
-        const newRating = await prisma.rating.upsert({
-            where: { userId_foodId: { userId, foodId } },
-            update: { value },
-            create: { value, userId, foodId },
-        });
-        res.status(201).json(newRating);
-    } catch (error) {
-        res.status(500).json({ message: "Gagal memberi rating", error: error.message });
-    }
-};
-
-// Fungsi untuk mengambil detail makanan
+// Fungsi untuk mengambil detail makanan 
 const getFoodById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -83,7 +49,17 @@ const getFoodById = async (req, res) => {
                 ratings: true,
                 restaurants: {
                     include: {
-                        restaurant: true
+                        restaurant: {
+                            
+                            select: {
+                                name: true,
+                                region: {
+                                    select: {
+                                        name: true
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -111,10 +87,10 @@ const getFoodById = async (req, res) => {
     }
 };
 
+// Fungsi untuk pin peta
 const getAllFoodPins = async (req, res) => {
     try {
         const foods = await prisma.food.findMany({
-            // Hanya pilih data yang dibutuhkan untuk pin peta
             select: {
                 id: true,
                 name: true,
@@ -128,11 +104,44 @@ const getAllFoodPins = async (req, res) => {
     }
 };
 
+// Fungsi untuk menambah review (rating + komentar)
+const addReview = async (req, res) => {
+    const foodId = parseInt(req.params.foodId);
+    const userId = req.user.userId;
+    const { value, content } = req.body;
+
+    if (!value || value < 1 || value > 5) {
+        return res.status(400).json({ message: "Rating (value) wajib diisi dengan angka 1-5." });
+    }
+    
+    try {
+        const [newRating, newComment] = await prisma.$transaction([
+            prisma.rating.upsert({
+                where: { userId_foodId: { userId, foodId } },
+                update: { value },
+                create: { value, userId, foodId },
+            }),
+            
+            content ? prisma.comment.create({
+                data: { content, userId, foodId },
+            }) : Promise.resolve(null)
+        ]);
+
+        res.status(201).json({ 
+            message: "Penilaian berhasil dikirim!",
+            rating: newRating,
+            comment: newComment 
+        });
+
+    } catch (error) {
+        res.status(500).json({ message: "Gagal mengirim penilaian", error: error.message });
+    }
+};
 
 module.exports = {
-    addComment,
-    addRating,
     searchFoods,
     getFoodById,
-    getAllFoodPins, 
+    getAllFoodPins,
+    addReview,
 };
+
