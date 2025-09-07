@@ -1,28 +1,31 @@
 const jwt = require('jsonwebtoken');
 
 const authenticateToken = (req, res, next) => {
-    // Ambil token dari header Authorization
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; 
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // format: Bearer <token>
 
-    // Jika tidak ada token, tolak akses
-    if (token == null) {
-        return res.status(401).json({ message: "Akses ditolak. Token tidak tersedia." });
+  if (!token) {
+    return res.status(401).json({ message: 'Akses ditolak. Token tidak tersedia.' });
+  }
+
+  jwt.verify(token, process.env.JWT_SECRET, (err, payload) => {
+    if (err) {
+      return res.status(403).json({ message: 'Token tidak valid atau sudah kedaluwarsa.' });
     }
 
-    // Verifikasi token
-    jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-        // Jika token tidak valid (error), tolak akses
-        if (err) {
-            return res.status(403).json({ message: "Token tidak valid." });
-        }
+    // pastikan ada userId di payload
+    req.user = {
+      userId: payload.userId ?? payload.id, // dukung payload dengan "id" atau "userId"
+      email: payload.email,
+      role: payload.role,
+    };
 
-        // Jika token valid, simpan informasi user di request
-        // agar bisa digunakan oleh controller selanjutnya
-        req.user = user;
+    if (!req.user.userId) {
+      return res.status(403).json({ message: 'Token tidak berisi identitas pengguna yang valid.' });
+    }
 
-        next();
-    });
+    next();
+  });
 };
 
-module.exports = authenticateToken; 
+module.exports = authenticateToken;

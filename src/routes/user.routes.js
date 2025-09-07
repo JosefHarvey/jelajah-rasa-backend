@@ -1,13 +1,10 @@
-const express = require('express');
-const router = express.Router();
-const userController = require('../controllers/user.controllers.js');
-
-//middleware
+// src/routes/user.routes.js
+const router = require('express').Router();
 const authenticateToken = require('../middlewares/auth.middleware.js');
-
+const userController = require('../controllers/user.controller.js');
 
 router.get('/me', authenticateToken, userController.getMyProfile);
-// RUTE UNTUK UPDATE
 router.put('/me', authenticateToken, userController.updateMyProfile);
+router.get('/me/reviews', authenticateToken, userController.getMyReviews);
 
 module.exports = router;

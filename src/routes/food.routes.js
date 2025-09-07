@@ -3,31 +3,31 @@ const router = express.Router();
 const foodController = require('../controllers/food.controller.js');
 const authenticateToken = require('../middlewares/auth.middleware.js');
 
-// RUTE SPESIFIK
-// Endpoint baru untuk makanan unggulan di landing page
-// GET /api/foods/featured
-router.get('/featured', foodController.getFeaturedFoods);
+/* RUTE PUBLIK (TANPA LOGIN)
+   Base path ini diasumsikan dimount di /api/foods */
 
-// Endpoint untuk mendapatkan semua pin makanan di peta
-// GET /api/foods/pins
-router.get('/pins', foodController.getAllFoodPins);
+// -- Rute List foods (filter & paging)
+// GET /api/foods?regionId=&q=&page=1&pageSize=12&sort=recent|rating
+router.get('/', foodController.listFoods);
 
-// Endpoint untuk fitur search bar
-// GET /api/foods/search?q=sate
-router.get('/search', foodController.searchFoods);
+// Rute spesifik 
+router.get('/featured', foodController.getFeaturedFoods);    // GET /api/foods/featured
+router.get('/pins', foodController.getAllFoodPins);          // GET /api/foods/pins
+router.get('/search', foodController.searchFoods);           // GET /api/foods/search?q=...
 
-
-// RUTE DINAMIS 
-// Endpoint untuk mendapatkan detail lengkap satu makanan
-// GET /api/foods/1
+// Detail food 
+// GET /api/foods/:id
 router.get('/:id', foodController.getFoodById);
 
+/* RUTE PROTEKSI (BUTUH LOGIN) */
 
-// RUTE POST 
-// Endpoint yang sudah digabung untuk mengirim rating dan komentar
-// POST /api/foods/1/reviews
-router.post('/:foodId/reviews', authenticateToken, foodController.addReview);
+// Referensi Kuliner Lokal (create & update)
+router.post('/', authenticateToken, foodController.createFood);          // POST /api/foods
+router.put('/:id', authenticateToken, foodController.updateFood);        // PUT /api/foods/:id
 
+// Review Food (rating + comment)
+router.get('/:foodId/reviews/me', authenticateToken, foodController.getMyReviewForFood); // GET /api/foods/:foodId/reviews/me
+router.post('/:foodId/reviews', authenticateToken, foodController.createReview);         // POST /api/foods/:foodId/reviews
+router.put('/:foodId/reviews', authenticateToken, foodController.updateReview);          // PUT /api/foods/:foodId/reviews
 
 module.exports = router;
-
