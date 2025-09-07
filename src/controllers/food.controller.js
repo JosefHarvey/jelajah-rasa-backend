@@ -22,7 +22,7 @@ const getFeaturedFoods = async (req, res) => {
     // Catatan: nama tabel mengikuti casing Prisma -> "Food", "Region"
     const rows = await prisma.$queryRawUnsafe(`
       SELECT f.id, f.name, f."imageUrl",
-             r.name as region_name
+             r.name as region_name, f."intro" AS intro
       FROM "Food" f
       JOIN "Region" r ON r.id = f."regionId"
       ORDER BY RANDOM()
